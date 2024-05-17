@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display buildings in 3D</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+<script>
+    // TO MAKE THE MAP APPEAR YOU MUST
+    // ADD YOUR ACCESS TOKEN FROM
+    // https://account.mapbox.com
+    var sideLength = 5;
+    function createSquarePolygon(center, sideLength) {
+            var point = turf.point(center);
+            var buffered = turf.buffer(point, sideLength / 2, { units: 'meters' });
+            var bbox = turf.bbox(buffered);
+            var square = turf.bboxPolygon(bbox);
+            return square.geometry.coordinates;
+        }
+    mapboxgl.accessToken = 'pk.eyJ1Ijoia3RvZmZhIiwiYSI6ImNsdzBxdGphdzAzOXUya3BocGRpYTJuMm0ifQ.NBpig4fOLcjK9BzIIz1PFw';
+    const map = new mapboxgl.Map({
+        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [7.335888, 47.750839],
+        zoom: 18,
+        pitch: 60,
+        bearing: -17.6,
+        container: 'map',
+        antialias: true
+    });
+
+    map.on('style.load', () => {
+        
+        // Insert the layer beneath any symbol layer.
+        const layers = map.getStyle().layers;
+        const labelLayerId = layers.find(
+            (layer) => layer.type === 'symbol' && layer.layout['text-field']
+        ).id;
+
+        // const coordinates = [
+        //         [
+        //             [7.335388, 47.751339], // Coordinate 1
+        //             [7.336388, 47.751339], // Coordinate 2
+        //             [7.336388, 47.750339], // Coordinate 3
+        //             [7.335388, 47.750339], // Coordinate 4
+        //             [7.335388, 47.751339]  // Closing coordinate (same as Coordinate 1)
+        //         ]
+        //     ];
+
+        const coordinates = createSquarePolygon([7.335888, 47.750839],sideLength)
+
+
+
+            console.log(coordinates)
+
+            // Add a source with GeoJSON data
+            map.addSource('3d-polygon', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': coordinates
+                    },
+                    'properties': {
+                        'height': 10 // Height in meters
+                    }
+                }
+            });
+
+            // Add a new fill-extrusion layer to visualize the 3D polygon
+            map.addLayer({
+                'id': '3d-polygon',
+                'type': 'fill-extrusion',
+                'source': '3d-polygon',
+                'layout': {},
+                'paint': {
+                    'fill-extrusion-color': '#0000FF',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': 0,
+                    'fill-extrusion-opacity': 0.8
+                }
+            });
+
+            
+
+        // map.addSource('polygon', {
+        //         'type': 'geojson',
+        //         'data': {
+        //             'type': 'Feature',
+        //             'geometry': {
+        //                 'type': 'Polygon',
+        //                 'coordinates': coordinates
+        //             }
+        //         }
+        //     });
+
+        //     // Add a new layer to visualize the polygon
+        //     map.addLayer({
+        //         'id': 'polygon',
+        //         'type': 'fill',
+        //         'source': 'polygon',
+        //         'layout': {},
+        //         'paint': {
+        //             'fill-color': '#888888',
+        //             'fill-opacity': 0.4
+        //         }
+        //     });
+
+        //     // Add a black outline around the polygon
+        //     map.addLayer({
+        //         'id': 'outline',
+        //         'type': 'fill-extrusion',
+        //         'source': 'polygon',
+        //         'layout': {},
+        //         'paint': {
+        //             'line-color': '#000',
+        //             'line-width': 2
+        //         }
+        //     });
+
+        // The 'building' layer in the Mapbox Streets
+        // vector tileset contains building height data
+        // from OpenStreetMap.
+        map.addLayer(
+            {
+                'id': 'add-3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+
+                    // Use an 'interpolate' expression to
+                    // add a smooth transition effect to
+                    // the buildings as the user zooms in.
+                    'fill-extrusion-height': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'height']
+                    ],
+                    'fill-extrusion-base': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'min_height']
+                    ],
+                    'fill-extrusion-opacity': 0.6
+                }
+            },
+            labelLayerId
+        );
+        
+    });
+</script>
+
+</body>
+</html>
