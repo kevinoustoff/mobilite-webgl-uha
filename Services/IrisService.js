@@ -1,0 +1,7 @@
+class IrisService{
+    
+
+    static getData(){
+
+    }
+}
