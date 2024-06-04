@@ -3,6 +3,7 @@ class MapCustom {
         mapboxgl.accessToken = accessToken;
         this.center = center;
         this.cubes = [];
+        this.communes = [];
         this.map = new mapboxgl.Map({
             container: container,
             style: style,
@@ -13,9 +14,21 @@ class MapCustom {
             antialias: true
         });
 
-        this.map.on('style.load', () => {
+        this.map.on('style.load', async () => {
+            await this.fetchCommunesData();
             this.onStyleLoad();
         });
+    }
+
+    async fetchCommunesData() {
+        try {
+            const data = await OSMReader.fetchJSONCommunData();
+            data.results.forEach(element => {
+                this.communes.push(new Commune(element.geo_shape.geometry.coordinates, element.com_nom, element.code_insee, element.code_iris, element.num_insee));
+            });
+        } catch (error) {
+            console.error("Error fetching communes data:", error);
+        }
     }
 
     addCube(movingBox) {
@@ -25,6 +38,41 @@ class MapCustom {
     async onStyleLoad() {
         const layers = this.map.getStyle().layers;
         const labelLayerId = layers.find((layer) => layer.type === 'symbol' && layer.layout['text-field']).id;
+        
+        this.communes.forEach(element => {
+            this.map.addSource(element.identifier(), {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': element.coordinates
+                    }
+                }
+            });
+
+            this.map.addLayer({
+                'id': element.identifier(),
+                'type': 'fill-extrusion',
+                'source': element.identifier(),
+                'layout': {},
+                'paint': {
+                    'fill-extrusion-color': 'rgba(0, 0, 255, 0.5)',  // Bleu transparent
+                    'fill-extrusion-opacity': 0.05, // Opacité séparée
+                }
+            });
+
+            this.map.addLayer({
+                'id': 'outline' + element.identifier(),
+                'type': 'line',
+                'source': element.identifier(),
+                'layout': {},
+                'paint': {
+                    'line-color': '#000',
+                    'line-width': 0.7
+                }
+            });
+        });
 
         this.map.addLayer(
             {
@@ -125,3 +173,5 @@ class MapCustom {
         }
     }
 }
+
+

@@ -9,3 +9,5 @@ for (let i = 0; i < numCubes; i++) {
     const movingBox = new MovingBox(nearbyNode);
     mapCustom.addCube(movingBox);
 }
+// const sample = require('./m2a_data/m2a_iris-insee.json');
+

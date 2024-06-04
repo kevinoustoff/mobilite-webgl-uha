@@ -119,5 +119,22 @@ class OSMReader {
       }
     }
 
+    static async fetchJSONCommunData() {
+      try {
+        const response = await fetch("https://data.mulhouse-alsace.fr/api/explore/v2.1/catalog/datasets/m2a_iris-insee/records?limit=100");
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        return data; // You can optionally return the data if needed elsewhere
+      } catch (error) {
+        console.error("Unable to fetch data:", error);
+        return null; // Example: Return null on error (optional)
+      }
+
+          
+    }
+
     
   }
