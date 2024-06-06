@@ -114,7 +114,7 @@ class MapCustom {
 
         setInterval(() => {
             this.animateCubes();
-        }, 2000);
+        }, 3000);
     }
 
     addCubeLayer(movingBox, index) {

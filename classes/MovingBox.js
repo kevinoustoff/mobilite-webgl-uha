@@ -1,5 +1,5 @@
 class MovingBox {
-    constructor(center) {
+    constructor(id,center) {
         this.center = center;
         this.sideLength = 5;
         this.selectedSense = getRandomIntRounded(100) % 4;
@@ -34,5 +34,9 @@ class MovingBox {
         const bbox = turf.bbox(buffered);
         const square = turf.bboxPolygon(bbox);
         return square.geometry.coordinates;
+    }
+
+    animate(){
+
     }
 }

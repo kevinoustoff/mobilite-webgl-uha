@@ -6,7 +6,7 @@ const mapCustom = new MapCustom(accessToken, 'map', 'mapbox://styles/mapbox/ligh
 const numCubes = 2; // Number of moving cubes
 for (let i = 0; i < numCubes; i++) {
     const nearbyNode = generateNearbyNode(centerNode, radiusInMeters);
-    const movingBox = new MovingBox(nearbyNode);
+    const movingBox = new MovingBox(i,nearbyNode);
     mapCustom.addCube(movingBox);
 }
 // const sample = require('./m2a_data/m2a_iris-insee.json');
