@@ -36,7 +36,7 @@ class MovingBox {
         return square.geometry.coordinates;
     }
 
-    animate(){
-
+    animate(map){
+        
     }
 }
