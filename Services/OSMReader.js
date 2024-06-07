@@ -3,6 +3,7 @@ class OSMReader {
     static MAX_LONGITUDE = 7.4141000
     static MIN_LATITUDE = 47.7239000
     static MIN_LONGITUDE = 7.2793000
+    
     constructor(fichier) {
       this.fichier = fichier;
 
@@ -132,8 +133,24 @@ class OSMReader {
         console.error("Unable to fetch data:", error);
         return null; // Example: Return null on error (optional)
       }
-
           
+    }
+
+    static async getRouting(depart, arrive,access_token){
+      try {
+        //https://api.mapbox.com/directions/v5/mapbox/driving/7.3350,47.7508;7.7455,48.5839?access_token=YOUR_MAPBOX_ACCESS_TOKEN
+
+        const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${depart[0]},${depart[1]};${arrive[0]},${depart[1]}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${access_token}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        return data; // You can optionally return the data if needed elsewhere
+      } catch (error) {
+        console.error("Unable to fetch data:", error);
+        return null; // Example: Return null on error (optional)
+      }
     }
 
     

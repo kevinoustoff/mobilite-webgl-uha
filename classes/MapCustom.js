@@ -111,10 +111,17 @@ class MapCustom {
         for (let i = 0; i < this.cubes.length; i++) {
             this.addCubeLayer(this.cubes[i], i);
         }
+        for (let i = 0; i < this.cubes.length; i++) {
+            this.cubes[i].animate(this.map,mapboxgl.accessToken);
+            await new Promise(resolve => {
+                setTimeout(() => {
+                  resolve();
+                }, 5000);
+              });
+        }
 
-        setInterval(() => {
-            this.animateCubes();
-        }, 3000);
+
+        
     }
 
     addCubeLayer(movingBox, index) {
@@ -134,13 +141,23 @@ class MapCustom {
             }
         });
 
+        const colors = ['#FFFF00', '#FF0000', '#00FF00', '#000000', '#0000FF'];
+
+
+
+// Utilisation du modulo pour obtenir un index valide dans le tableau des couleurs
+    let colorIndex = index % colors.length;
+
+// Assignation de la couleur à une variable
+let assignedColor = colors[colorIndex];
+
         this.map.addLayer({
             'id': sourceId,
             'type': 'fill-extrusion',
             'source': sourceId,
             'layout': {},
             'paint': {
-                'fill-extrusion-color': '#0000FF',
+                'fill-extrusion-color': assignedColor,
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-base': 0,
                 'fill-extrusion-opacity': 0.8
@@ -148,30 +165,30 @@ class MapCustom {
         });
     }
 
-    async animateCubes() {
-        for (let i = 0; i < this.cubes.length; i++) {
-            const movingBox = this.cubes[i];
-            await movingBox.move();
-            const coordinates = movingBox.createSquarePolygon(movingBox.center.toArray());
+    // async animateCubes() {
+    //     for (let i = 0; i < this.cubes.length; i++) {
+    //         const movingBox = this.cubes[i];
+    //         await movingBox.move();
+    //         const coordinates = movingBox.createSquarePolygon(movingBox.center.toArray());
 
-            const sourceId = `3d-polygon-${i}`;
-            const source = this.map.getSource(sourceId);
-            if (source) {
-                source.setData({
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': coordinates
-                    },
-                    'properties': {
-                        'height': 10
-                    }
-                });
-            } else {
-                console.error(`Source ${sourceId} not found`);
-            }
-        }
-    }
+    //         const sourceId = `3d-polygon-${i}`;
+    //         const source = this.map.getSource(sourceId);
+    //         if (source) {
+    //             source.setData({
+    //                 'type': 'Feature',
+    //                 'geometry': {
+    //                     'type': 'Polygon',
+    //                     'coordinates': coordinates
+    //                 },
+    //                 'properties': {
+    //                     'height': 10
+    //                 }
+    //             });
+    //         } else {
+    //             console.error(`Source ${sourceId} not found`);
+    //         }
+    //     }
+    // }
 }
 
 

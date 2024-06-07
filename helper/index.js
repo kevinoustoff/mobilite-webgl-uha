@@ -45,3 +45,27 @@ function generateNearbyNode(centerNode, radiusInMeters) {
 
     return new Node(Number.parseFloat(newLon.toFixed(7)), Number.parseFloat(newLat.toFixed(7)));
 }
+
+function computeDistance(from,to){
+    var from = turf.point(from);
+    var to = turf.point(to);
+    var options = { units: "kilometers" };
+
+    return turf.distance(from, to, options);
+}
+function generateCoordinatesBetween(start, end) {
+    var numPoints =20
+    const startPoint = turf.point(start);
+    const endPoint = turf.point(end);
+    const line = turf.lineString([startPoint.geometry.coordinates, endPoint.geometry.coordinates]);
+
+    const length = turf.length(line, { units: 'kilometers' }); // Calculer la longueur de la ligne
+
+    const coordinates = [];
+    for (let i = 0; i <= numPoints; i++) {
+        const distanceAlongLine = (i / numPoints) * length; // Calculer la distance le long de la ligne
+        const pointOnLine = turf.along(line, distanceAlongLine, { units: 'kilometers' });
+        coordinates.push(pointOnLine.geometry.coordinates);
+    }
+    return coordinates;
+}
