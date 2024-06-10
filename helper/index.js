@@ -53,17 +53,21 @@ function computeDistance(from,to){
 
     return turf.distance(from, to, options);
 }
-function generateCoordinatesBetween(start, end) {
-    var numPoints =20
+// Fonction pour générer les coordonnées entre les points en fonction de la vitesse
+function generateCoordinatesBetween(start, end, speedMS) {
     const startPoint = turf.point(start);
     const endPoint = turf.point(end);
     const line = turf.lineString([startPoint.geometry.coordinates, endPoint.geometry.coordinates]);
 
-    const length = turf.length(line, { units: 'kilometers' }); // Calculer la longueur de la ligne
+    const length = turf.length(line, { units: 'kilometers' }); // Calculer la longueur de la ligne en kilomètres
+
+    // Calculer le nombre de segments
+    const distancePerInterval = speedMS; // en mètres, puisque le temps entre les segments est de 1 seconde
+    const numSegments = Math.ceil((length * 1000) / distancePerInterval); // Convertir la longueur en mètres pour le calcul
 
     const coordinates = [];
-    for (let i = 0; i <= numPoints; i++) {
-        const distanceAlongLine = (i / numPoints) * length; // Calculer la distance le long de la ligne
+    for (let i = 0; i <= numSegments; i++) {
+        const distanceAlongLine = (i / numSegments) * length; // Calculer la distance le long de la ligne en kilomètres
         const pointOnLine = turf.along(line, distanceAlongLine, { units: 'kilometers' });
         coordinates.push(pointOnLine.geometry.coordinates);
     }

@@ -6,13 +6,20 @@ class MovingBox {
         this.decisionCarrefour = 0;
         this.id = id;
         this.steps = [];
-        this.isAnimating = false; // Nouveau: Indicateur pour vérifier si l'animation est en cours
+        this.isAnimating = false; // Indicateur pour vérifier si l'animation est en cours
+        this.speed = getRandomIntRounded(20); // La vitesse en kilomètres par heure
+
+        // Convertir la vitesse en m/s
+        this.speedMS = (this.speed * 1000) / 3600;
+
+        
+        this.lastPositionDate = Date.now();
     }
 
     async move() {
         if (this.decisionCarrefour > 3) {
             this.selectedSense = getRandomIntRounded(100) % 4;
-            console.log(this.selectedSense);
+            
         }
 
         const randomPoint = generateRandomCoordinate(sense[this.selectedSense], this.center.latitude, this.center.longitude);
@@ -21,14 +28,14 @@ class MovingBox {
 
         if (this.center.latitude === nearcoordinates[1] && this.center.longitude === nearcoordinates[0]) {
             this.decisionCarrefour++;
-            console.log(this.decisionCarrefour);
+            
         } else {
             this.decisionCarrefour = 0;
         }
 
         this.center.latitude = nearcoordinates[1];
         this.center.longitude = nearcoordinates[0];
-        console.log("centerrr", this.center);
+        
     }
 
     createSquarePolygon(center) {
@@ -44,51 +51,63 @@ class MovingBox {
         if (this.isAnimating) return;
         this.isAnimating = true;
 
-        // setInterval(async () => {
-            var arrive = generateNearbyNode(this.center, 10000);
-            console.log("afficher jhd");
+        const arrive = generateNearbyNode(this.center, 10000);
 
-            try {
-                var dataCoord = await OSMReader.getRouting(this.center.toArray(), arrive.toArray(), access_token);
-                console.log(dataCoord.routes);
-                var i = 0;
-                var j = 0;
-                for (const route of dataCoord.routes) {
-                    for (const el of route.geometry.coordinates) {
-                        if (computeDistance(this.center.toArray(), route.geometry.coordinates[j]) > 0.004) {
-                            var coordArranges = generateCoordinatesBetween(this.center.toArray(), route.geometry.coordinates[j]);
-                            for (const ca of coordArranges) {
-                                this.center = new Node(ca[0], ca[1]);
-                                await new Promise(resolve => {
-                                    setTimeout(() => {
-                                        resolve();
-                                    }, 1);
-                                });
+        try {
+            const dataCoord = await OSMReader.getRouting(this.center.toArray(), arrive.toArray(), access_token);
+            
+
+            for (const route of dataCoord.routes) {
+                for (let j = 0; j < route.geometry.coordinates.length; j++) {
+                    const nextPoint = route.geometry.coordinates[j];
+                    let distance = computeDistance(this.center.toArray(), nextPoint); // distance en mètres
+
+                    if (distance > 0.0001) {
+                        const coordArranges = generateCoordinatesBetween(this.center.toArray(), nextPoint, 1.5*this.speedMS);
+                        for (let k = 0; k < coordArranges.length; k++) {
+                            const arrangedPoint = coordArranges[k];
+                            const segmentDistance = k === 0 ? distance : computeDistance(coordArranges[k - 1], arrangedPoint);
+
+                            // Calculez le temps écoulé depuis le dernier mouvement
+                            const now = Date.now();
+                            const timeElapsed = (now - this.lastPositionDate) / 1000; // en secondes
+
+                            // Calculez la pause nécessaire pour ce segment
+                            const pauseDuration = Math.max((segmentDistance / this.speedMS) * 1000 - timeElapsed * 1000, 0); // en millisecondes
+
+                            this.center = new Node(arrangedPoint[0], arrangedPoint[1]);
+                            this.lastPositionDate = now;
+                            await new Promise(resolve => setTimeout(() => {
                                 this.afficherCube(map);
-                            }
-                        }
-                        await new Promise(resolve => {
-                            setTimeout(() => {
                                 resolve();
-                            }, 2);
-                        });
-                        this.afficherCube(map);
-                        j++;
+                            }, pauseDuration));
+                        }
+                    } else {
+                        const now = Date.now();
+                        const timeElapsed = (now - this.lastPositionDate) / 1000; // en secondes
+
+                        const pauseDuration = Math.max((distance / this.speedMS) * 1000 - timeElapsed * 1000, 0); // en millisecondes
+                        this.center = new Node(nextPoint[0], nextPoint[1]);
+                        this.lastPositionDate = now;
+                        await new Promise(resolve => setTimeout(() => {
+                            this.afficherCube(map);
+                            resolve();
+                        }, pauseDuration));
                     }
-                    i++;
                 }
-            } catch (error) {
-                console.error('Error getting routing data:', error);
             }
-        //}
-        // , 600000);
+        } catch (error) {
+            console.error('Error getting routing data:', error);
+        } finally {
+            this.isAnimating = false;
+        }
     }
 
     async afficherCube(map) {
         const coordinates = this.createSquarePolygon(this.center.toArray());
         const sourceId = `3d-polygon-${this.id}`;
 
-        console.log(sourceId);
+        
 
         const source = map.getSource(sourceId);
         if (source) {
@@ -107,3 +126,4 @@ class MovingBox {
         }
     }
 }
+

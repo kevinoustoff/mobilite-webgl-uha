@@ -120,9 +120,9 @@ class OSMReader {
       }
     }
 
-    static async fetchJSONCommunData() {
+    static async fetchJSONCommunData(offset,limit) {
       try {
-        const response = await fetch("https://data.mulhouse-alsace.fr/api/explore/v2.1/catalog/datasets/m2a_iris-insee/records?limit=100");
+        const response = await fetch(`https://data.mulhouse-alsace.fr/api/explore/v2.1/catalog/datasets/m2a_iris-insee/records?limit=${limit}&offset=${offset}`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -140,7 +140,7 @@ class OSMReader {
       try {
         //https://api.mapbox.com/directions/v5/mapbox/driving/7.3350,47.7508;7.7455,48.5839?access_token=YOUR_MAPBOX_ACCESS_TOKEN
 
-        const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${depart[0]},${depart[1]};${arrive[0]},${depart[1]}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${access_token}`);
+        const response = await fetch(`http://router.project-osrm.org/route/v1/driving/${depart[0]},${depart[1]};${arrive[0]},${depart[1]}?overview=full&geometries=geojson`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
