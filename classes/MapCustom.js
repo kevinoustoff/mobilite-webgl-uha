@@ -1,5 +1,5 @@
 class MapCustom {
-    constructor(accessToken, container, style = 'mapbox://styles/mapbox/light-v11', center = [0, 0], zoom = 18, pitch = 70, bearing = -17.6) {
+    constructor(accessToken, container, style = 'mapbox://styles/mapbox/light-v11', center = [0, 0], zoom = 18, pitch = 70, bearing = -17.6, maxMovingBox) {
         mapboxgl.accessToken = accessToken;
         this.center = center;
         this.cubes = [];
@@ -14,11 +14,36 @@ class MapCustom {
             bearing: bearing,
             antialias: true
         });
-
+        this.maxMovingBox = maxMovingBox
         this.map.on('style.load', async () => {
             await this.fetchCommunesData();
             this.onStyleLoad();
         });
+        this.startCubeCountingLoop()
+    }
+
+    countCubesInCommunes() {
+        this.communes.forEach(commune => {
+            const communePolygon = turf.polygon(commune.coordinates);
+            const communeId = commune.identifier();
+            let counts = 0;
+    
+            this.cubes.forEach(cube => {
+                const point = turf.point(cube.center.toArray());
+                if (turf.booleanPointInPolygon(point, communePolygon)) {
+                    counts++;
+                    
+                }
+            });
+            commune.currentMovingBox = counts;
+        });
+    
+    }
+
+    startCubeCountingLoop(intervalMs = 5000) {
+        setInterval(() => {
+            this.countCubesInCommunes();
+        }, intervalMs);
     }
 
     async fetchCommunesData() {
@@ -40,6 +65,18 @@ class MapCustom {
         this.cubes.push(movingBox);
     }
 
+    blinkOverloadedCommunes(duration = 10000) {
+        this.countCubesInCommunes();
+    
+        this.communes.forEach(commune => {
+            if (commune.currentMovingBox > this.maxMovingBox) {
+                this.blinkCommune(commune.identifier(), duration);
+            }
+        });
+    }
+
+    
+
 
 
     async blinkCommune(communeIdentifier, duration = 10000) {
@@ -60,7 +97,6 @@ class MapCustom {
             visible = !visible; // Inverser la valeur de visible à chaque itération
         }, 500); // Interval de clignotement de 0.5 seconde
     
-        // Arrête le clignotement après la durée spécifiée
         setTimeout(() => {
             clearInterval(blinkInterval);
             // Rétablir la couleur d'origine
@@ -155,15 +191,14 @@ class MapCustom {
                 await new Promise(resolve => {
                     setTimeout(() => {
                       resolve();
-                    }, 1000);
+                    }, 3000);
                   });
             }
             
         }
 
         setInterval(() => {
-            const randomIndex = getRandomIntRounded(this.communes.length - 1); // Générer un index aléatoire
-            this.blinkCommune(this.communes[randomIndex].identifier(), 9000); // Faire clignoter une commune aléatoire pendant 9 secondes
+            this.blinkOverloadedCommunes() // Faire clignoter une commune aléatoire pendant 9 secondes
         }, 20000);
 
 
